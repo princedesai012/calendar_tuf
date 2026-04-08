@@ -1,0 +1,563 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   WallCalendar.module.css
+   Wall-calendar aesthetic — with month theming, holiday markers, slide anim.
+───────────────────────────────────────────────────────────────────────────── */
+
+/* ── Tokens ──────────────────────────────────────────────────────────────── */
+.wrapper {
+  --blue:        #1E9BD4;
+  --blue-dark:   #0d6fa0;
+  --blue-mid:    #1688b8;
+  --blue-light:  #d4eef9;
+  --blue-xlight: #eaf6fd;
+  --white:       #ffffff;
+  --off-white:   #f7f5f1;
+  --gray-100:    #eceae6;
+  --gray-200:    #d8d5cf;
+  --gray-300:    #b0ada6;
+  --gray-500:    #767269;
+  --gray-700:    #4a4844;
+  --gray-800:    #2d2b27;
+  --shadow:      0 24px 64px rgba(0,0,0,0.20), 0 6px 20px rgba(0,0,0,0.10);
+  --radius:      4px;
+  --font-display: 'Playfair Display', Georgia, serif;
+  --font-body:    'DM Sans', system-ui, sans-serif;
+
+  width: 100%;
+  max-width: 680px;
+  margin: 0 auto;
+  font-family: var(--font-body);
+}
+
+/* ── Spiral rings ─────────────────────────────────────────────────────────── */
+.rings {
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+  padding: 0 44px;
+  margin-bottom: -2px;
+  position: relative;
+  z-index: 10;
+}
+.ring {
+  width: 14px;
+  height: 22px;
+  border: 2.5px solid #2e2c28;
+  border-radius: 7px;
+  background: transparent;
+  position: relative;
+  flex-shrink: 0;
+}
+.ring::before {
+  content: '';
+  position: absolute;
+  top: -7px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 3px;
+  height: 9px;
+  background: #2e2c28;
+  border-radius: 2px 2px 0 0;
+}
+
+/* ── Calendar card ────────────────────────────────────────────────────────── */
+.card {
+  background: var(--white);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+/* ── Hero section ─────────────────────────────────────────────────────────── */
+.hero {
+  position: relative;
+  height: 230px;
+  overflow: hidden;
+  background: #a4b4bf;
+}
+.heroSkeleton {
+  background: linear-gradient(90deg, #c8c5bf 25%, #dbd8d2 50%, #c8c5bf 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+}
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+.heroBg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+/* Blue/white wave cutout bottom-left */
+.heroWave {
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 52%;
+  height: 54px;
+  pointer-events: none;
+}
+/* Year + month badge — bottom right */
+.heroBadge {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  background: var(--white);
+  clip-path: polygon(36px 0, 100% 0, 100% 100%, 0 100%, 0 36px);
+  padding: 14px 22px 16px 30px;
+  min-width: 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0;
+}
+.heroYear {
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--gray-500);
+  letter-spacing: 2.5px;
+  line-height: 1;
+}
+.heroMonth {
+  font-family: var(--font-display);
+  font-size: 34px;
+  font-weight: 900;
+  color: var(--blue);
+  letter-spacing: -0.5px;
+  line-height: 1.1;
+  text-transform: uppercase;
+  transition: color 0.4s ease;
+}
+
+/* ── Skeleton panels ──────────────────────────────────────────────────────── */
+.skeletonPanel {
+  flex: 1;
+  height: 220px;
+  background: linear-gradient(90deg, #ece9e4 25%, #f5f2ee 50%, #ece9e4 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+}
+
+/* ── Calendar body (notes + grid side by side) ────────────────────────────── */
+.body {
+  display: grid;
+  grid-template-columns: 164px 1fr;
+  background: var(--white);
+  min-width: 0;
+}
+
+/* ── Notes section ────────────────────────────────────────────────────────── */
+.notesSection {
+  padding: 18px 14px 20px 18px;
+  border-right: 1px solid var(--gray-100);
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+.notesLabel {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+  color: var(--gray-500);
+  margin-bottom: 10px;
+}
+.notesLines {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.noteLine {
+  display: block;
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--gray-200);
+  height: 26px;
+  font-size: 11px;
+  font-family: var(--font-body);
+  color: var(--gray-800);
+  outline: none;
+  padding: 0 2px;
+  transition: border-color 0.18s;
+  min-width: 0;
+}
+.noteLine::placeholder { color: var(--gray-200); }
+.noteLine:focus { border-bottom-color: var(--focus-color, var(--blue)); }
+
+/* Range note block */
+.rangeNoteBlock {
+  margin-top: 12px;
+  background: var(--blue-xlight);
+  border: 1px solid var(--blue-light);
+  border-radius: 5px;
+  padding: 8px 10px;
+  animation: fadeSlide 0.22s ease;
+  transition: background 0.4s, border-color 0.4s;
+}
+@keyframes fadeSlide {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.rangeNoteHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+.rangeNoteMeta {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--blue-mid);
+  opacity: 0.7;
+  line-height: 1;
+  margin-bottom: 2px;
+  transition: color 0.4s;
+}
+.rangeNoteLabel {
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--blue-dark);
+  line-height: 1.3;
+  transition: color 0.4s;
+}
+.clearBtn {
+  flex-shrink: 0;
+  background: none;
+  border: 1px solid var(--blue);
+  color: var(--blue);
+  font-size: 9px;
+  font-family: var(--font-body);
+  border-radius: 3px;
+  padding: 2px 6px;
+  cursor: pointer;
+  line-height: 1.4;
+  transition: all 0.15s;
+}
+.clearBtn:hover { background: var(--blue); color: white; }
+.rangeNoteTextarea {
+  display: block;
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(30,155,212,0.3);
+  font-size: 10.5px;
+  font-family: var(--font-body);
+  color: var(--blue-dark);
+  resize: none;
+  outline: none;
+  padding: 2px 0;
+  line-height: 1.5;
+  transition: color 0.4s, border-color 0.4s;
+}
+.rangeNoteTextarea::placeholder { color: rgba(30,155,212,0.4); }
+
+/* ── Grid section ─────────────────────────────────────────────────────────── */
+.gridSection {
+  padding: 14px 12px 14px 12px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* Month navigation */
+.monthNav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.navBtn {
+  background: none;
+  border: none;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 18px;
+  color: var(--gray-500);
+  transition: background 0.15s, color 0.15s;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.navBtn:hover { background: var(--nav-hover-bg, var(--blue-light)); color: var(--nav-hover-color, var(--blue-dark)); }
+.monthNavTitle {
+  font-family: var(--font-display);
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--gray-800);
+  letter-spacing: 0.2px;
+}
+
+/* Weekday headers */
+.weekdayRow {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin-bottom: 3px;
+}
+.weekdayLabel {
+  text-align: center;
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--gray-300);
+  padding: 4px 0;
+}
+.weekdayLabel.weekend { color: var(--blue); }
+
+/* Day grid */
+.daysGrid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px;
+}
+
+/* ── Page-flip keyframes ──────────────────────────────────────────── */
+@keyframes flipExitLeft {
+  0%   { transform: perspective(700px) translateX(0)     rotateY(0deg)   scale(1);    opacity: 1; }
+  40%  {                                                                               opacity: 0.6; }
+  100% { transform: perspective(700px) translateX(-12%)  rotateY(-30deg) scale(0.88); opacity: 0; }
+}
+@keyframes flipEnterRight {
+  0%   { transform: perspective(700px) translateX(12%)   rotateY(30deg)  scale(0.88); opacity: 0; }
+  60%  {                                                                               opacity: 0.7; }
+  100% { transform: perspective(700px) translateX(0)     rotateY(0deg)   scale(1);    opacity: 1; }
+}
+
+@keyframes flipExitRight {
+  0%   { transform: perspective(700px) translateX(0)     rotateY(0deg)   scale(1);    opacity: 1; }
+  40%  {                                                                               opacity: 0.6; }
+  100% { transform: perspective(700px) translateX(12%)   rotateY(30deg)  scale(0.88); opacity: 0; }
+}
+@keyframes flipEnterLeft {
+  0%   { transform: perspective(700px) translateX(-12%)  rotateY(-30deg) scale(0.88); opacity: 0; }
+  60%  {                                                                               opacity: 0.7; }
+  100% { transform: perspective(700px) translateX(0)     rotateY(0deg)   scale(1);    opacity: 1; }
+}
+
+@keyframes titleFadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Flip container + page layers ─────────────────────────────── */
+.flipContainer {
+  position: relative;
+  overflow: hidden;
+  padding-bottom: 2px;
+}
+.flipPage {
+  width: 100%;
+}
+.flipGhost {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: white;
+  z-index: 2;
+}
+
+.flipExitLeft  { animation: flipExitLeft  0.40s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+.flipExitRight { animation: flipExitRight 0.40s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+.flipEnterRight { animation: flipEnterRight 0.40s cubic-bezier(0.22, 1, 0.36, 1) both; animation-delay: 0.04s; }
+.flipEnterLeft  { animation: flipEnterLeft  0.40s cubic-bezier(0.22, 1, 0.36, 1) both; animation-delay: 0.04s; }
+
+.titleFadeIn { animation: titleFadeIn 0.28s ease both; }
+
+/* ── Day cell ─────────────────────────────────────────────────────────────── */
+.dayCell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 1px 4px;
+  cursor: pointer;
+  outline: none;
+  min-width: 0;
+}
+.dayCell:focus-visible .dayNum {
+  box-shadow: 0 0 0 2px var(--blue);
+}
+
+.dayNum {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  font-size: 11.5px;
+  font-weight: 400;
+  color: var(--gray-800);
+  transition: background 0.13s, color 0.13s, transform 0.1s;
+  user-select: none;
+  flex-shrink: 0;
+}
+.dayCell:hover:not(.otherMonth) .dayNum {
+  background: var(--blue-light);
+  color: var(--blue-dark);
+}
+.dayCell:active .dayNum { transform: scale(0.92); }
+
+/* States */
+.dayCell.otherMonth .dayNum { color: var(--gray-300); }
+.dayCell.weekend:not(.otherMonth) .dayNum { color: var(--blue); }
+
+.dayCell.today .dayNum {
+  background: var(--gray-800);
+  color: white;
+  font-weight: 600;
+}
+
+/* ── Holiday dot ──────────────────────────────────────────────────────────── */
+.holidayDot {
+  font-size: 7px;
+  line-height: 1;
+  margin-top: 1px;
+  display: block;
+  text-align: center;
+}
+
+
+/* ── Holiday legend ───────────────────────────────────────────────────────── */
+.holidayLegend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px dashed var(--gray-100);
+}
+.holidayLegendItem {
+  font-size: 9px;
+  color: var(--gray-500);
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+}
+
+/* Range — start cap */
+.dayCell.rangeStart {
+  background: linear-gradient(to right, transparent 50%, var(--range-bg, rgba(30,155,212,0.12)) 50%);
+}
+/* Range — end cap */
+.dayCell.rangeEnd {
+  background: linear-gradient(to left, transparent 50%, var(--range-bg, rgba(30,155,212,0.12)) 50%);
+}
+/* Range — only one day selected */
+.dayCell.rangeSingle {
+  background: transparent !important;
+}
+/* Range — between start and end */
+.dayCell.inRange {
+  background: var(--range-bg, rgba(30,155,212,0.12));
+}
+.dayCell.inRange .dayNum { color: var(--blue-dark); font-weight: 500; }
+
+/* Start/end pill */
+.dayCell.rangeStart .dayNum,
+.dayCell.rangeEnd .dayNum {
+  background: var(--accent, var(--blue)) !important;
+  color: white !important;
+  font-weight: 600;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--accent, var(--blue)) 38%, transparent);
+}
+
+/* ── Footer ──────────────────────────────────────────────────────────────── */
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 18px 12px;
+  border-top: 1px solid var(--gray-100);
+  background: var(--off-white);
+}
+.footerHint {
+  font-size: 10px;
+  color: var(--gray-300);
+  letter-spacing: 0.3px;
+}
+.footerRange {
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--blue);
+  letter-spacing: 0.2px;
+  transition: color 0.4s;
+}
+
+/* ── Responsive — tablet ─────────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .wrapper { max-width: 100%; }
+
+  .rings { gap: 11px; padding: 0 28px; }
+  .ring  { width: 11px; height: 18px; }
+  .ring::before { height: 7px; }
+
+  .hero { height: 180px; }
+  .heroMonth { font-size: 27px; }
+  .heroYear  { font-size: 12px; }
+  .heroBadge { min-width: 160px; padding: 10px 14px 12px 22px; }
+  .heroWave  { width: 56%; height: 48px; }
+
+  /* Stack notes above grid on mobile */
+  .body { grid-template-columns: 1fr; }
+  .notesSection {
+    border-right: none;
+    border-bottom: 1px solid var(--gray-100);
+    padding: 12px 14px;
+  }
+  .notesLines { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
+
+  .gridSection { padding: 10px 8px 12px; }
+}
+
+/* ── Responsive — mobile ─────────────────────────────────────────────────── */
+@media (max-width: 420px) {
+  .wrapper { max-width: 100%; }
+
+  .rings { gap: 8px; padding: 0 16px; }
+  .ring  { width: 10px; height: 16px; }
+  .ring::before { height: 6px; top: -6px; }
+
+  .hero { height: 155px; }
+  .heroMonth { font-size: 22px; }
+  .heroYear  { font-size: 11px; }
+  .heroBadge { min-width: 130px; padding: 8px 12px 10px 18px; clip-path: polygon(24px 0, 100% 0, 100% 100%, 0 100%, 0 24px); }
+  .heroWave  { width: 60%; height: 40px; }
+
+  .gridSection { padding: 8px 6px 10px; }
+  .dayNum { width: 24px; height: 24px; font-size: 10.5px; }
+  .weekdayLabel { font-size: 8px; letter-spacing: 0; padding: 3px 0; }
+  .daysGrid { gap: 0; }
+  .dayCell { padding: 1px 0 3px; }
+  .holidayDot { font-size: 6px; }
+
+  .monthNavTitle { font-size: 12px; }
+  .navBtn { width: 24px; height: 24px; font-size: 15px; }
+
+  .footer { padding: 6px 12px 10px; flex-direction: column; align-items: flex-start; gap: 3px; }
+  .footerHint { font-size: 9px; }
+  .footerRange { font-size: 9.5px; }
+
+  .holidayLegend { gap: 3px 8px; }
+  .holidayLegendItem { font-size: 8px; }
+}
+
+@media (max-width: 320px) {
+  .dayNum { width: 20px; height: 20px; font-size: 9.5px; }
+  .heroBadge { min-width: 110px; }
+  .heroMonth { font-size: 18px; }
+  .weekdayLabel { font-size: 7px; }
+}
