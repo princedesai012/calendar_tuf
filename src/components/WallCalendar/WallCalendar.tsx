@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import styles from './WallCalendar.module.css';
-import { useCalendarState } from '@/hooks/useCalendarState';
+import { useCalendarState, type Stroke } from '@/hooks/useCalendarState';
 import {
   MONTH_NAMES, WEEKDAY_LABELS, buildMonthGrid,
   cmpKeys, fromKey, daysBetween, MONTH_THEMES,
@@ -22,70 +22,91 @@ function Rings() {
 
 // ─── Hero ─────────────────────────────────────────────────────────────────────
 function Hero({ monthName, year, accent }: { monthName: string; year: number; accent: string }) {
+  const [mouse, setMouse] = useState({ x: 0, y: 0 });
+
+  function handleMouseMove(e: React.MouseEvent<HTMLDivElement>) {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width - 0.5; // -0.5 to 0.5
+    const y = (e.clientY - rect.top) / rect.height - 0.5;
+    setMouse({ x, y });
+  }
+
+  function handleMouseLeave() {
+    setMouse({ x: 0, y: 0 });
+  }
+
+  // Smooth transition for parallax layers
+  const pStyle = (xMult: number, yMult: number): React.CSSProperties => ({
+    transform: `translate(${mouse.x * xMult}px, ${mouse.y * yMult}px)`,
+    transition: 'transform 0.1s ease-out',
+  });
+
   return (
-    <div className={styles.hero}>
+    <div className={styles.hero} onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}>
       <svg
         className={styles.heroBg}
         viewBox="0 0 680 230"
         preserveAspectRatio="xMidYMid slice"
         aria-hidden="true"
       >
-        {/* Sky */}
+        {/* Sky (Static background) */}
         <rect width="680" height="230" fill="#a4b4bf" />
-        <rect width="680" height="115" fill="#bdd0da" opacity="0.55" />
-        <rect width="680" height="65" fill="#d2e2ec" opacity="0.35" />
-        {/* Clouds */}
-        <ellipse cx="105" cy="40" rx="82" ry="17" fill="#dce9f1" opacity="0.45" />
-        <ellipse cx="170" cy="33" rx="54" ry="12" fill="#e4eff6" opacity="0.4" />
-        <ellipse cx="500" cy="29" rx="104" ry="15" fill="#dce9f1" opacity="0.35" />
-        <ellipse cx="592" cy="43" rx="66" ry="11" fill="#e4eff6" opacity="0.3" />
-        {/* Background mountains */}
-        <polygon points="555,230 640,108 724,230" fill="#7a8e9c" />
-        <polygon points="516,230 608,122 702,230" fill="#6e8290" />
-        <polygon points="-22,230 62,128 162,230" fill="#7e9199" />
-        <polygon points="0,230 82,144 132,230" fill="#7a8d97" />
-        {/* Main rock slab */}
-        <polygon points="88,230 224,78 504,230" fill="#4e5c6a" />
-        <polygon points="198,230 292,62 484,230 382,230" fill="#8fa2b0" />
-        <polygon points="268,102 312,65 354,102 312,90" fill="#aabbca" opacity="0.55" />
-        {/* Snow */}
-        <polygon points="278,92 296,60 314,92 296,87" fill="white" opacity="0.72" />
-        <polygon points="296,60 306,70 290,84" fill="white" opacity="0.48" />
-        {/* Rock grain lines */}
-        <line x1="224" y1="78" x2="292" y2="184" stroke="#5c6a78" strokeWidth="1" opacity="0.28" />
-        <line x1="254" y1="73" x2="316" y2="178" stroke="#5c6a78" strokeWidth="0.8" opacity="0.22" />
-        <line x1="322" y1="66" x2="362" y2="162" stroke="#8ca0ae" strokeWidth="0.8" opacity="0.18" />
-        {/* Left cliff */}
-        <polygon points="0,230 0,158 142,230" fill="#3d4d5a" />
-        <polygon points="0,230 62,172 0,202" fill="#2e3d4a" />
-
-        {/* ── Climber ── */}
-        <g transform="translate(370, 120) rotate(-18)">
-          {/* Legs */}
-          <line x1="0" y1="30" x2="-10" y2="56" stroke="#2c3a46" strokeWidth="4" strokeLinecap="round" />
-          <line x1="0" y1="30" x2="8" y2="56" stroke="#2c3a46" strokeWidth="4" strokeLinecap="round" />
-          {/* Boots */}
-          <line x1="-10" y1="56" x2="-17" y2="58" stroke="#1a2830" strokeWidth="3.5" strokeLinecap="round" />
-          <line x1="8" y1="56" x2="15" y2="58" stroke="#1a2830" strokeWidth="3.5" strokeLinecap="round" />
-          {/* Torso */}
-          <line x1="0" y1="5" x2="0" y2="30" stroke="#c0392b" strokeWidth="6" strokeLinecap="round" />
-          {/* Left arm + ice-axe */}
-          <line x1="0" y1="12" x2="20" y2="-16" stroke="#c0392b" strokeWidth="4" strokeLinecap="round" />
-          <line x1="20" y1="-16" x2="26" y2="-23" stroke="#8a9a6a" strokeWidth="2.5" strokeLinecap="round" />
-          <line x1="22" y1="-25" x2="30" y2="-18" stroke="#6a7a5a" strokeWidth="2" strokeLinecap="round" />
-          {/* Right arm braced */}
-          <line x1="0" y1="14" x2="-13" y2="25" stroke="#c0392b" strokeWidth="4" strokeLinecap="round" />
-          {/* Head */}
-          <circle cx="1" cy="-4" r="6" fill="#d4a678" />
-          {/* Helmet */}
-          <ellipse cx="1" cy="-9" rx="7" ry="5" fill="#c0392b" />
-          {/* Pack */}
-          <rect x="2" y="8" width="8" height="14" rx="2" fill="#b03020" opacity="0.7" />
+        
+        {/* Clouds (Moves opposite to mouse for depth) */}
+        <g style={pStyle(-10, -5)}>
+          <rect width="680" height="115" fill="#bdd0da" opacity="0.55" />
+          <rect width="680" height="65" fill="#d2e2ec" opacity="0.35" />
+          <ellipse cx="105" cy="40" rx="82" ry="17" fill="#dce9f1" opacity="0.45" />
+          <ellipse cx="170" cy="33" rx="54" ry="12" fill="#e4eff6" opacity="0.4" />
+          <ellipse cx="500" cy="29" rx="104" ry="15" fill="#dce9f1" opacity="0.35" />
+          <ellipse cx="592" cy="43" rx="66" ry="11" fill="#e4eff6" opacity="0.3" />
         </g>
-        {/* Rock chips */}
-        <circle cx="384" cy="160" r="2" fill="#9aaab8" opacity="0.6" />
-        <circle cx="377" cy="164" r="1.5" fill="#8a9aa8" opacity="0.5" />
-        <circle cx="392" cy="162" r="1" fill="#9aaab8" opacity="0.4" />
+
+        {/* Background mountains (Moves slightly with mouse) */}
+        <g style={pStyle(6, 3)}>
+          <polygon points="555,230 640,108 724,230" fill="#7a8e9c" />
+          <polygon points="516,230 608,122 702,230" fill="#6e8290" />
+          <polygon points="-22,230 62,128 162,230" fill="#7e9199" />
+          <polygon points="0,230 82,144 132,230" fill="#7a8d97" />
+        </g>
+
+        {/* Main rock slab & Climber (Moves more) */}
+        <g style={pStyle(14, 7)}>
+          <polygon points="88,230 224,78 504,230" fill="#4e5c6a" />
+          <polygon points="198,230 292,62 484,230 382,230" fill="#8fa2b0" />
+          <polygon points="268,102 312,65 354,102 312,90" fill="#aabbca" opacity="0.55" />
+          <polygon points="278,92 296,60 314,92 296,87" fill="white" opacity="0.72" />
+          <polygon points="296,60 306,70 290,84" fill="white" opacity="0.48" />
+          <line x1="224" y1="78" x2="292" y2="184" stroke="#5c6a78" strokeWidth="1" opacity="0.28" />
+          <line x1="254" y1="73" x2="316" y2="178" stroke="#5c6a78" strokeWidth="0.8" opacity="0.22" />
+          <line x1="322" y1="66" x2="362" y2="162" stroke="#8ca0ae" strokeWidth="0.8" opacity="0.18" />
+          
+          {/* ── Climber ── */}
+          <g transform="translate(370, 120) rotate(-18)">
+            <line x1="0" y1="30" x2="-10" y2="56" stroke="#2c3a46" strokeWidth="4" strokeLinecap="round" />
+            <line x1="0" y1="30" x2="8" y2="56" stroke="#2c3a46" strokeWidth="4" strokeLinecap="round" />
+            <line x1="-10" y1="56" x2="-17" y2="58" stroke="#1a2830" strokeWidth="3.5" strokeLinecap="round" />
+            <line x1="8" y1="56" x2="15" y2="58" stroke="#1a2830" strokeWidth="3.5" strokeLinecap="round" />
+            <line x1="0" y1="5" x2="0" y2="30" stroke="#c0392b" strokeWidth="6" strokeLinecap="round" />
+            <line x1="0" y1="12" x2="20" y2="-16" stroke="#c0392b" strokeWidth="4" strokeLinecap="round" />
+            <line x1="20" y1="-16" x2="26" y2="-23" stroke="#8a9a6a" strokeWidth="2.5" strokeLinecap="round" />
+            <line x1="22" y1="-25" x2="30" y2="-18" stroke="#6a7a5a" strokeWidth="2" strokeLinecap="round" />
+            <line x1="0" y1="14" x2="-13" y2="25" stroke="#c0392b" strokeWidth="4" strokeLinecap="round" />
+            <circle cx="1" cy="-4" r="6" fill="#d4a678" />
+            <ellipse cx="1" cy="-9" rx="7" ry="5" fill="#c0392b" />
+            <rect x="2" y="8" width="8" height="14" rx="2" fill="#b03020" opacity="0.7" />
+          </g>
+          
+          <circle cx="384" cy="160" r="2" fill="#9aaab8" opacity="0.6" />
+          <circle cx="377" cy="164" r="1.5" fill="#8a9aa8" opacity="0.5" />
+          <circle cx="392" cy="162" r="1" fill="#9aaab8" opacity="0.4" />
+        </g>
+
+        {/* Left cliff (Foreground, moves most) */}
+        <g style={pStyle(24, 12)}>
+          <polygon points="0,230 0,158 142,230" fill="#3d4d5a" />
+          <polygon points="0,230 62,172 0,202" fill="#2e3d4a" />
+        </g>
       </svg>
 
       {/* Wave cutout */}
@@ -400,12 +421,124 @@ function Grid({
   );
 }
 
+// ─── Draw Overlay ─────────────────────────────────────────────────────────────
+function DrawOverlay({
+  isActive, strokes, onStrokeEnd
+}: {
+  isActive: boolean;
+  strokes: Stroke[];
+  onStrokeEnd: (s: Stroke) => void;
+}) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const isDrawing = useRef(false);
+  const currentPath = useRef<Stroke>([]);
+  const dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
+
+  const render = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    const rect = canvas.parentElement!.getBoundingClientRect();
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.scale(dpr, dpr);
+
+    ctx.clearRect(0, 0, rect.width, rect.height);
+    
+    ctx.strokeStyle = 'rgba(235, 60, 60, 0.85)';
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.lineWidth = 3;
+
+    strokes.forEach(path => {
+      if (path.length === 0) return;
+      ctx.beginPath();
+      ctx.moveTo(path[0].x, path[0].y);
+      for (let i = 1; i < path.length; i++) {
+        ctx.lineTo(path[i].x, path[i].y);
+      }
+      ctx.stroke();
+    });
+    
+    if (isDrawing.current && currentPath.current.length > 0) {
+      const path = currentPath.current;
+      ctx.beginPath();
+      ctx.moveTo(path[0].x, path[0].y);
+      for (let i = 1; i < path.length; i++) {
+        ctx.lineTo(path[i].x, path[i].y);
+      }
+      ctx.stroke();
+    }
+  }, [strokes, dpr]);
+
+  useEffect(() => {
+    render();
+    window.addEventListener('resize', render);
+    return () => window.removeEventListener('resize', render);
+  }, [render]);
+
+  function handlePointerDown(e: React.PointerEvent) {
+    if (!isActive) return;
+    isDrawing.current = true;
+    const rect = canvasRef.current!.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    currentPath.current = [{x, y}];
+    e.currentTarget.setPointerCapture(e.pointerId);
+    render();
+  }
+
+  function handlePointerMove(e: React.PointerEvent) {
+    if (!isActive || !isDrawing.current) return;
+    const rect = canvasRef.current!.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    currentPath.current.push({x, y});
+    render();
+  }
+
+  function handlePointerUp(e: React.PointerEvent) {
+    if (!isActive || !isDrawing.current) return;
+    isDrawing.current = false;
+    e.currentTarget.releasePointerCapture(e.pointerId);
+    if (currentPath.current.length > 0) {
+      onStrokeEnd([...currentPath.current]);
+    }
+    currentPath.current = [];
+  }
+
+  return (
+    <canvas 
+      ref={canvasRef}
+      style={{
+        position: 'absolute', inset: 0,
+        width: '100%', height: '100%',
+        pointerEvents: isActive ? 'auto' : 'none',
+        zIndex: 10, touchAction: 'none'
+      }}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerUp}
+    />
+  );
+}
+
 // ─── Footer ───────────────────────────────────────────────────────────────────
-function Footer({ isSelecting, rangeStart, rangeEnd, accent }: {
+function Footer({ 
+  isSelecting, rangeStart, rangeEnd, accent,
+  drawMode, setDrawMode, hasStrokes, clearStrokes,
+}: {
   isSelecting: boolean;
   rangeStart: DateKey | null;
   rangeEnd: DateKey | null;
   accent: string;
+  drawMode: boolean;
+  setDrawMode: (d: boolean) => void;
+  hasStrokes: boolean;
+  clearStrokes: () => void;
 }) {
   const hint = !rangeStart
     ? 'Click a date to start selecting a range'
@@ -423,8 +556,24 @@ function Footer({ isSelecting, rangeStart, rangeEnd, accent }: {
 
   return (
     <footer className={styles.footer}>
-      <span className={styles.footerHint}>{hint}</span>
-      {info && <span className={styles.footerRange} style={{ color: accent }}>{info}</span>}
+      <div className={styles.drawControls}>
+        <button 
+          className={`${styles.drawBtn} ${drawMode ? styles.active : ''}`}
+          onClick={() => setDrawMode(!drawMode)}
+          aria-pressed={drawMode}
+        >
+          {drawMode ? 'Draw Mode: ON' : 'Draw Mode: OFF'}
+        </button>
+        {hasStrokes && (
+          <button className={styles.drawBtn} onClick={clearStrokes}>
+            Erase Canvas
+          </button>
+        )}
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+        <span className={styles.footerHint}>{hint}</span>
+        {info && <span className={styles.footerRange} style={{ color: accent }}>{info}</span>}
+      </div>
     </footer>
   );
 }
@@ -436,8 +585,11 @@ export default function WallCalendar() {
     range, setHoverKey, handleDayClick, clearRange,
     notes, updateLine, updateRangeNote,
     effectiveStart, effectiveEnd,
+    strokes, pushStroke, clearStrokes,
     isHydrated,
   } = useCalendarState();
+  
+  const [drawMode, setDrawMode] = useState(false);
 
   const theme = MONTH_THEMES[viewMonth];
 
@@ -471,7 +623,8 @@ export default function WallCalendar() {
       <div className={styles.card}>
         <Hero monthName={MONTH_NAMES[viewMonth]} year={viewYear} accent={theme.accent} />
 
-        <div className={styles.body}>
+        <div className={styles.body} style={{ position: 'relative' }}>
+          <DrawOverlay isActive={drawMode} strokes={strokes} onStrokeEnd={pushStroke} />
           <Notes
             lines={notes.lines}
             rangeNote={notes.rangeNote}
@@ -505,6 +658,10 @@ export default function WallCalendar() {
           rangeStart={range.start}
           rangeEnd={range.end}
           accent={theme.accent}
+          drawMode={drawMode}
+          setDrawMode={setDrawMode}
+          hasStrokes={strokes.length > 0}
+          clearStrokes={clearStrokes}
         />
       </div>
     </div>

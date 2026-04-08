@@ -268,6 +268,33 @@
   overflow: hidden;
 }
 
+/* ── Draw Mode Toggles ────────────────────────────────────────────────────── */
+.drawControls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.drawBtn {
+  background: transparent;
+  border: 1px solid currentColor;
+  border-radius: 4px;
+  padding: 3px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: var(--blue);
+}
+.drawBtn.active {
+  background: var(--blue);
+  color: white;
+}
+.drawBtn:hover:not(.active) {
+  background: rgba(0,0,0,0.05);
+}
+
 /* Month navigation */
 .monthNav {
   display: flex;

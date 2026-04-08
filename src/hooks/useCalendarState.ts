@@ -4,6 +4,9 @@ import { useState, useCallback } from 'react';
 import { DateKey, RangeState, NotesState, cmpKeys } from '../components/WallCalendar/calendarUtils';
 import { useLocalStorage } from './useLocalStorage';
 
+export type Point = { x: number; y: number };
+export type Stroke = Point[];
+
 const today = new Date();
 
 export function useCalendarState() {
@@ -20,6 +23,7 @@ export function useCalendarState() {
     lines: Array(6).fill(''),
     rangeNote: '',
   });
+  const [strokes, setStrokes, strokesHydrated] = useLocalStorage<Stroke[]>('wcal-strokes', []);
 
   /** Key that is being hovered during selection — used for preview */
   const [hoverKey, setHoverKey] = useState<DateKey | null>(null);
@@ -83,6 +87,10 @@ export function useCalendarState() {
   const effectiveStart = range.selecting ? (previewStart ?? range.start) : range.start;
   const effectiveEnd   = range.selecting ? previewEnd : range.end;
 
+  // ── Drawing ─────────────────────────────────────────────────────────────────
+  const pushStroke = useCallback((stroke: Stroke) => setStrokes(prev => [...prev, stroke]), [setStrokes]);
+  const clearStrokes = useCallback(() => setStrokes([]), [setStrokes]);
+
   return {
     viewYear,
     viewMonth,
@@ -97,6 +105,9 @@ export function useCalendarState() {
     updateRangeNote,
     effectiveStart,
     effectiveEnd,
-    isHydrated: rangeHydrated && notesHydrated,
+    strokes,
+    pushStroke,
+    clearStrokes,
+    isHydrated: rangeHydrated && notesHydrated && strokesHydrated,
   };
 }
